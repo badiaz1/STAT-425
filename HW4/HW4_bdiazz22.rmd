@@ -1,0 +1,155 @@
+---
+title: "STAT 426 Assignment 4"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+fontsize: 12pt
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+**Due Tuesday, September 21, 11:59 pm.** 
+
+Submit through Moodle.
+
+## Name: Brianna Diaz
+### Netid: bdiaz22
+
+Submit your work both as an R markdown (*.Rmd) document and as a pdf, along with any files needed to run the code. Embed your answers to each problem in the document below after the question statement. If you have hand-written work, please scan or take pictures of it and include in a pdf file, ideally combined with your pdf output file from R Markdown. Be sure to show your work.
+
+
+
+### Problem 1 (6 pts)
+
+The table constructed below shows the results of a retrospective study comparing radiation therapy with surgery in treating cancer of the larynx.
+ 
+```{r}
+df = data.frame(
+    Treatment=c('Surgery', 'Surgery', 'Radiation', 'Radiation'),
+    Cancer=c('Controlled', 'Not Controlled', 
+             'Controlled', 'Not Controlled'),
+    Count=c(21, 2, 15, 3))
+dftab = xtabs(Count ~ Treatment + Cancer, data=df)
+dftab
+```
+    
+**(a)** Use Fisher's exact test to test the null hypothesis $H_0: \theta=1$ versus $H_A: \theta <1$, where $\theta$ is the odds ratio. Report and interpret the p-value, indicating whether or not surgery is significantly better than radiation, at a significance level of 10\%. (In the R function \texttt{fisher.test} use \texttt{alternative='less'})
+
+Answer:
+```{r}
+fisher.test(dftab, alternative = "less", conf.level = .90)
+#Based off the p-value I would say the surgery is better than radiation. 
+```
+
+
+**(b)** Use the two-sided alternative in \texttt{fisher.test} to obtain an "exact" 95\% confidence interval for $\theta$. Interpret what the results tell us about the relative effectiveness of the two treatments in controlling cancer.
+
+Answer:
+```{r}
+fisher.test(dftab, alternative = "two.sided")
+#exact p-value is 0.6384. The confidence interval does not include 1 so it is significant at 0.05 level. Shows that surgery is the better treatment. 
+```
+
+**(c)** The Fisher exact test treats both the row totals and the column totals as fixed. Under this condition, what is the largest possible value for the count in the upper left cell of the table (Treatment='Radiation', Cancer='Controlled')? Remember that if the count in one cell is increased, then the counts in the other cells have to be adjusted to keep the row and column totals constant.
+
+**Answer:**
+```{r}
+margin.table(dftab, 1)
+margin.table(dftab, 2)
+#Based off of the the count should stay at 18.
+```
+
+### Problem 2 (8 pts)
+
+High school seniors were surveyed for their political party identification (columns) and that of their parents (rows). The data are tabulated below
+
+\begin{center}
+    \begin{tabular}{lcccc}
+      & & \multicolumn{1}{c}{Democratic} &
+       \multicolumn{1}{c}{Independent} &
+       \multicolumn{1}{c}{Republican}\\[0.5ex] \hline \\[-2ex]
+    Democratic  && 60 & 25 & 7 \\
+    Independent && 13 & 24 & 8 \\
+    Republican && 6 & 18 & 25\\ [0.5ex] \hline
+    \end{tabular}
+    \end{center}
+
+
+**(a)** Notice how the cross tabulated table in Problem 1 was constructed in R. Using a similar method or otherwise, enter the party identification data into a $3\times 3$ cross tabulated table in R and display it.
+
+Answer:
+```{r}
+q2 = data.frame(
+    Parents=c('Democratic', 'Democratic', 'Democratic', 'Independent', 'Independent', 'Independent','Republican', 'Republican', 'Republican'),
+    Student=c('Democratic', 'Independent', 'Republican','Democratic', 'Independent', 'Republican','Democratic', 'Independent', 'Republican'),
+    Count=c(60,25,7,13,24,8,6,18,25))
+q2.tab = xtabs(Count ~ Parents + Student, data = q2)
+q2.tab
+```
+
+**(b)** Calculate the expected counts under the null hypothesis that the party identifications of the students and their parents are statistically independent.
+
+Answer:
+```{r}
+q2.X2 <- chisq.test(q2.tab, correct = F)
+q2.X2$expected
+```
+
+**(c)** Find the p-value of the Pearson Chi-square test of independence.
+
+Answer:
+```{r}
+q2.X2
+#P-value is 8.192e-12
+```
+
+**(d)** Display the table of standardized Pearson residuals and interpret qualitatively.
+
+Answer:
+```{r}
+q2.X2$stdres
+```
+
+### Problem 3 (6 pts)
+
+
+Consider a linear regression model of the form
+\begin{equation}
+Y_i \sim \text{Normal}(\mu_i, 1)\quad\text{where}\quad \mu_i=E(Y_i)=\eta_i
+\end{equation}
+and
+$$
+\eta_i = \alpha+\beta_1x_{i1}+\cdots + \beta_px_{ip},\quad i=1,2,\ldots,n.
+$$
+**(a)** What is the link function for the model specified above?
+
+Answer:
+  Answers on speperate sheet of paper. 
+**(b)** Show that the probability density function of $Y_i$ has a natural exponential family form:
+$$
+f(y_i; \mu_i) = a(\mu_i)b(y_i)\exp(y_i Q(\mu_i))
+$$
+and show the forms of the functions $a(\mu_i)$, $b(y_i)$ and $Q(\mu_i)$.
+
+Hint: Recall that, in general, the probability density function for $\text{Normal}(\mu, \sigma^2)$ has the form,
+$$
+f(y; \mu, \sigma^2) = \frac{1}{\sigma\sqrt{2\pi}}\exp\left\{-\frac{1}{2\sigma^2}(y-\mu)^2\right\}
+$$
+and expand the square.
+
+Answer:
+
+**(c)** Show that if $y_1, y_2, \ldots, y_n$ are independent observations from the model specified above in (1), then maximizing the likelihood is the same as minimizing 
+$$
+\sum_{i=1}^n (y_i - \mu_i)^2
+$$
+
+Answer:
+
+
+
+
+
+
