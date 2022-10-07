@@ -1,0 +1,162 @@
+---
+title: "STAT 426 Assignment 6"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+fontsize: 12pt
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+**Due Wednesday, October 13, 11:59 pm.** 
+
+Submit through Moodle.
+
+## Name: Brianna Diaz
+### Netid: bdiaz22
+
+Submit your work both as an R markdown (*.Rmd) document and as a pdf, along with any files needed to run the code. Embed your answers to each problem in the document below after the question statement. If you have hand-written work, please scan or take pictures of it and include in a pdf file, ideally combined with your pdf output file from R Markdown. Be sure to show your work.
+
+### Problem 1. (8 pts)
+
+The following data are from a retrospective study of 2659 patients. The data show estimated daily numbers of cigarettes smoked and counts of Cancer patients and Control patients for each level. The variable \texttt{clevel} is an ordinal score for the level of smoking.
+
+```{r, echo=FALSE}
+#ref Agresti problem 2.18
+dfs = data.frame(
+  dailycig = c("0", "< 5", "5-14", "15-24", "25-49", "50+"),
+  clevel = seq(0,5),
+  Cancer = c(7,55,489,475,293,38),
+  Control = c(6,129,570,431,154,12)
+)
+```
+```{r}
+dfs
+```
+**a)** (1 pt) Here are the estimated coefficients from fitting the logistic regression of Cancer/Control on \texttt{dailycig}. 
+
+```{r}
+coefficients(glm(cbind(Cancer, Control) ~ dailycig, 
+                 family=binomial, data=dfs))
+```
+
+What is the reference category for smoking here, in other words, which smoking level does the intercept correspond to?
+
+**Answer:** The reference category is dailycig<5
+
+**b)** (1 pt) An equivalent model is to treat \texttt{clevel} as a factor (categorical) variable. Here are the coefficients for that model:
+
+```{r}
+coefficients(glm(cbind(Cancer, Control) ~ factor(clevel), 
+                 family=binomial, data=dfs))
+```
+
+What is the reference level of smoking in this case, i.e., which level does the intercept correspond to?
+
+**Answer:** Reference level is factor(clevel)0. 
+
+**c)** (2 pts) The models in a) and b) are equivalent, and both correspond to the saturated model. Explain why, or demonstrate with computations that these models are saturated.
+
+```{r}
+daily <- (glm(cbind(Cancer, Control) ~ dailycig, 
+                 family=binomial, data=dfs))
+summary(daily)
+
+factor <- (glm(cbind(Cancer, Control) ~ factor(clevel), 
+                 family=binomial, data=dfs))
+summary(factor)
+```
+
+**Answer:** Based off the results of the deviance residuals, is shows that it is a one to one model and therefore saturated.
+
+**d)** (2 pts) The models in a) and b) both have the form,
+$$
+\text{logit}(\pi_i) = \alpha + \beta_i,\quad i=2,\ldots, 6.
+$$
+Perform a likelihood ratio test of 
+\begin{align*}
+&H_0: \beta_2 = \cdots = \beta_6=0\\
+&H_a: \text{at least one } \beta_i\neq 0
+\end{align*}
+
+What do you conclude from the test result?
+```{r}
+drop1(daily, test="Chisq")
+```
+
+**Answer:** Based off the results I conclude that we reject the null for the p-value =  2.2e-16.
+
+**e)** (2 pt) Using the likelihood ratio approach ($G^2$ deviance test), test the adequacy of a simplified logit model that treats \texttt{clevel} as a quantitative variable rather than as a categorical factor variable. What do you conclude from this test?
+```{r}
+factor2 <- (glm(cbind(Cancer, Control) ~ clevel, 
+                 family=binomial, data=dfs))
+drop1(factor2, test = "Chisq")
+```
+
+**Answer:** Based off the test I conclude the model is not a good fit because its p-value = 2.2e-16; therefore, rejecting the null. 
+
+### Problem 2. (12 pts) 
+
+The following data were reported on the FDA website from a randomized, prospective clinical trial of a vaccine for Covid-19. The outcome is onset of covid-19 after at least 14 days (Covid), or no onset (NoCovid). The data below are for the age groups 18-64 and 65+.
+```{r, echo=FALSE}
+dfv = data.frame(
+  Age=rep(c("18-64", "65+"),c(2,2)),
+  Treatment=rep(rep(c("Placebo","Vaccine"), c(1,1)),),
+  Covid=c(441, 157, 68, 16),
+  NoCovid =c(15552-441, 15552-157, 3992-68, 3970-16)
+)
+```
+```{r}
+dfv
+```
+
+**a)** (2 pts) Fit the saturated logistic regression model (the full model with interaction) using the (Covid, Nocovid) frequencies as the response. Display the model summary. Is the Wald coefficient test of the interaction  statistically significant at level $\alpha=0.05$? 
+
+```{r}
+slr <- glm(cbind(Covid, NoCovid) ~ Age*Treatment, family=binomial, data=dfv )
+
+summary(slr)
+```
+
+**Answer:** We do not reject the Null because the p-value for the intersection is 0.17 which is greater than .05. 
+
+**b)** (2 pts) Let $\theta_{18-64}$ and $\theta_{65+}$ denote the conditional Covid/NoCovid odds ratios for Placebo versus Vaccine for the two age groups. Express the null hypothesis of no interaction in the logit model as a hypothesis about $\theta_{18-64}$ and $\theta_{65+}$.
+
+**Answer:**
+\begin{align*}
+&H_0: \beta_18-64 = \beta_65+ = 1\\
+\end{align*}
+
+**c)** (2 pts) Fit the additive model (dropping the interaction term) and display the model summary. 
+
+**Answer:**
+```{r}
+slr2 <- glm(cbind(Covid, NoCovid) ~ Age + Treatment, family=binomial, data=dfv )
+
+summary(slr2)
+```
+
+**d)** (2pts) Test for homogeneous association by performing a likelihood ratio test of the additive model versus the saturated model. What do you conclude?
+```{r}
+anova(slr2, slr, test = "Chisq")
+```
+
+**Answer:**
+I can conclude that this is association between the two because the P-value is 0.1573 which is greater than 0.05, so we do not reject the Null. 
+
+
+**e)** (2 pts) Compute a profile likelihood confidence interval for coefficients, and translate into a profile likelihood confidence interval for the ratios of odds of Covid onset for vaccine versus placebo and for Age 65+ versus Age 18-64.
+
+**Answer:**
+```{r}
+confint(slr2)
+exp(confint(slr2))
+```
+
+**f)** (2 pts) Discuss how to interpret the confidence interval results. Is the vaccine effective, and if so how effective? What possible explanations might there be for a different odds of onset for the 65+ group versus the 18-64 group?
+
+**Answer:**
+The vaccine is effective because the probability intervals are smaller than one. Those who are 65+ might have weaker immune system so the vaccine does not work as well as someone who is between 18-64. 
+
