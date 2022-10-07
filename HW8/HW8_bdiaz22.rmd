@@ -1,0 +1,184 @@
+---
+title: "STAT 426 Assignment 8"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+fontsize: 12pt
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+**Due Tuesday, October 26, 11:59 pm.** 
+
+Submit through Moodle.
+
+## Name: Brianna Diaz
+### Netid: bdiaz22
+
+Submit your work both as an R markdown (*.Rmd) document and as a pdf, along with any files needed to run the code. Embed your answers to each problem in the document below after the question statement. If you have hand-written work, please scan or take pictures of it and include in a pdf file, ideally combined with your pdf output file from R Markdown. Be sure to show your work.
+
+### Problem 1. (6 pts) 
+
+This problem refers to the horseshoe crab example of Notes_8_1, where various logistic regression models were compared. The data are available as "horseshoe.txt" from the Moodle folder, "Data sets for lecture notes and assignments." In the notes the variable \texttt{weight} was eliminated from consideration due to its correlation with \texttt{width}. In this problem we allow both \texttt{weight} and \texttt{width} to be candidate variables for the model.
+```{r}
+library(readr)
+library(tidyverse)
+```
+```{r}
+horseshoe <- read.table("horseshoe.txt", header=TRUE)
+```
+
+**a)** (2 pts) Starting from the intercept only model, try a forward selection that allows \texttt{width}, \texttt{weight}, and the two factor variables, \texttt{color} and \texttt{spine}, as candidate variables for the model, but not their interactions. Using AIC as the selection criterion, show the steps and a summary of the final model. Is the final model the same as the final model in the class notes?
+```{r}
+hsfit <- glm(y~ weight + width + factor(color) + factor(spine), family=binomial, data = horseshoe)
+#summary(hsfit)
+
+nullmod <- glm(y~1, family=binomial, data=horseshoe)
+
+formod <- step(nullmod, ~ width + weight + factor(color) + factor(spine), direction="forward")
+summary(formod)
+#In comparison to the class notes the numbers are the same.
+```
+
+**b)** (2 pts) Perform backward selection starting from the additive model that includes all four of the variables listed in Part a). Show the steps and final model. Is the selected model the same as the final backward selection model in the notes?
+```{r}
+fullmod <- glm(y~width + weight + factor(color) + factor(spine), family=binomial, data=horseshoe)
+
+backmod <- step(fullmod)
+
+summary(backmod)
+
+#The AIC numbers are different from the notes
+```
+
+**c)** (2 pts) Perform stepwise selection starting from the null model and allowing all four of the variables listed in Part a) as candidate variables for the model, but not their interactions. Is the selected model the same as the final stepwise model in the notes?
+```{r}
+stepmod <- step(nullmod, ~ width + weight + factor(color) + factor(spine ), direction="both")
+summary(stepmod)
+
+#The selected model is the same as the notes.
+```
+
+### Problem 2. (10 pts)
+
+This problem refers to the horseshoe crab example of Notes_8_3.
+
+**a)** (2 pts) Consider the additive logistic regression model with \texttt{y} as the response and \texttt{width} and the factor variable \texttt{color} as predictors. In the lecture notes we computed the leave-one-out cross-validation estimates of sensitivity and specificity for this model, with threshold $\pi_0=0.5$, but we did not use cross validation for the ROC curve. Redo the ROC curve using the leave-one-out predicted values instead of the fitted values. 
+```{r}
+mod1 <- glm(y ~ width, family=binomial, data=horseshoe)
+
+mod2 <- glm(y ~ factor(color), family=binomial, data=horseshoe)
+
+mod3 <- glm(y ~ width + factor(color), family=binomial, data=horseshoe)
+
+pi0<- 0.5
+pihatcv <- numeric(nrow(horseshoe))
+for(i in 1:nrow(horseshoe))
+pihatcv[i] <- predict(update(mod3, subset=-i),
+newdata=horseshoe[i,],type="response")
+
+#table(y=horseshoe$y, yhat=as.numeric(pihatcv > pi0))
+
+false.neg <- c(0,cumsum(tapply(horseshoe$y,pihatcv,sum)))
+true.neg <- c(0,cumsum(table(pihatcv))) - false.neg
+par(pty="s")
+plot(1-true.neg/max(true.neg), 1-false.neg/max(false.neg), type="l",
+main="ROC Curve", xlab="1 - Specificity", ylab="Sensitivity",
+xlim=c(0,1), ylim=c(0,1), lwd=3)
+abline(a=0, b=1, lty=2, col="green")
+```
+
+**b)** (2 pts) For the ROC curve you computed in Part a), calculate the leave-one-out concordance index (area under the curve). How does the value compare to the concordance index using fitted values that was calculated in the notes?
+```{r}
+mean(outer(pihatcv[horseshoe$y==1], pihatcv[horseshoe$y==0], ">")
++ 0.5 * outer(pihatcv[horseshoe$y==1], pihatcv[horseshoe$y==0], "=="))
+
+#The index does not match the one in the notes
+```
+
+**c)** (2 pts) Next consider the logistic regression model for \texttt{y} that only includes \texttt{width} as a predictor. Compute and display its ROC curve using the leave-one-out predictions.
+```{r}
+pihatcv2 <- numeric(nrow(horseshoe))
+for(i in 1:nrow(horseshoe))
+pihatcv2[i] <- predict(update(mod1, subset=-i),
+newdata=horseshoe[i,],type="response")
+
+#table(y=horseshoe$y, yhat=as.numeric(pihatcv2 > pi0))
+
+false.neg <- c(0,cumsum(tapply(horseshoe$y,pihatcv2,sum)))
+true.neg <- c(0,cumsum(table(pihatcv2))) - false.neg
+par(pty="s")
+plot(1-true.neg/max(true.neg), 1-false.neg/max(false.neg), type="l",
+main="ROC Curve", xlab="1 - Specificity", ylab="Sensitivity",
+xlim=c(0,1), ylim=c(0,1), lwd=3)
+abline(a=0, b=1, lty=2, col="green")
+```
+
+**d)** (2 pts) For the ROC curve you computed in Part c), calculate the leave-one-out concordance index (area under the curve). Is the value much different from the value in b)?
+```{r}
+mean(outer(pihatcv2[horseshoe$y==1], pihatcv2[horseshoe$y==0], ">")
++ 0.5 * outer(pihatcv2[horseshoe$y==1], pihatcv2[horseshoe$y==0], "=="))
+#The index is about the same as b 
+#Just a difference of 0.0058123
+```
+
+**e)** (2 pts) Finally, consider the logistic regression model for \texttt{y} that includes only the factor varaible \texttt{color} as a predictor. Compute and display its ROC curve using the leave-one-out predictions. What do you conclude about this model's performance as a classifier?
+```{r}
+pihatcv3 <- numeric(nrow(horseshoe))
+for(i in 1:nrow(horseshoe))
+pihatcv3[i] <- predict(update(mod2, subset=-i),
+newdata=horseshoe[i,],type="response")
+
+#table(y=horseshoe$y, yhat=as.numeric(pihatcv3 > pi0))
+
+false.neg <- c(0,cumsum(tapply(horseshoe$y,pihatcv3,sum)))
+true.neg <- c(0,cumsum(table(pihatcv3))) - false.neg
+par(pty="s")
+plot(1-true.neg/max(true.neg), 1-false.neg/max(false.neg), type="l",
+main="ROC Curve", xlab="1 - Specificity", ylab="Sensitivity",
+xlim=c(0,1), ylim=c(0,1), lwd=3)
+abline(a=0, b=1, lty=2, col="green")
+
+#the model had a bad performance.
+```
+
+## Problem 3 (4 pts)
+
+Once again we consider the horseshoe crab data! The model in Part 2e) that includes the factor variable \texttt{color} as the only predictor could be fit using a grouped analysis. Assuming you called the horseshoe data frame "horseshoe", the code below will create grouped data with 0/1 response frequencies for each color level. 
+
+\begin{verbatim}
+grouped = data.frame(with(data=horseshoe, table(factor(color), y)))
+names(grouped)[1] = "colorlev"
+grouped = reshape(grouped, idvar="colorlev", timevar="y", direction="wide")
+grouped
+\end{verbatim}
+
+**a)** (2 pts) Run/modify the code to create and display the grouped data. 
+Using the grouped data, fit the logistic regression model for \texttt{y} that includes \texttt{colorlev} as a factor variable. Display the model summary and obtain its residual deviance and residual degrees of freedom. 
+```{r}
+grouped = data.frame(with(data=horseshoe, table(factor(color), y)))
+names(grouped)[1] = "colorlev"
+grouped = reshape(grouped, idvar="colorlev", timevar = "y", direction="wide")
+grouped
+
+pb3a <- glm(cbind(`Freq.0`, `Freq.1`) ~ factor(colorlev), family = binomial, data=grouped)
+
+summary(pb3a)
+#residual deviance is 9.3259e-15
+#residual degrees of freedom is 0
+```
+
+**b)** (2 pts) For the equivalent ungrouped model from part 2e), show the model summary and obtain the residual deviance and residual degrees of freedom. Summarize how the results compare between the model in Part a) and this model in terms of their coefficient estimates, residual deviance and residual degrees of freedom.
+```{r}
+summary(mod2)
+#The coefficient estimates are the same for both
+#but the coefficients have different signs. 
+
+#2e has a higher residual deviance and degress of freedom than 3a.
+
+#residual deviance is 212.06
+#residual degrees of freedom is 169
+```
+
