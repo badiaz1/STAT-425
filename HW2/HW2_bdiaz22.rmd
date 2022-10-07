@@ -1,0 +1,112 @@
+---
+title: "STAT 426 Assignment 2"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+fontsize: 12pt
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+**Due Tuesday, September 7, 11:59 pm.** 
+
+Submit through Moodle.
+
+## Name: Brianna Diaz
+### Netid: bdiaz22
+
+Submit your work both as an R markdown (*.Rmd) document and as a pdf, along with any files needed to run the code. Embed your answers to each problem in the document below after the question statement. If you have hand-written work, please scan or take pictures of it and include in a pdf file, ideally combined with your pdf output file from R Markdown. Be sure to show your work.
+
+
+### Problem 1 (6 pts)
+ 
+Let $Y_1, Y_2, \ldots, Y_n$ be independent observations from the Poisson distribution with mean $\mu$, which is unknown. Recall that if
+$Y = \sum_{i=1}^n Y_i$, then $Y \sim \text{Poisson}(n\mu)$.
+
+**(a)** Show that the kernel of the log-likelihood, $L(\mu)$, depends only on $Y$, $\mu$ and $n$.
+
+**Answer:** All work for this problem on separate sheet.
+![](/Users/briannadiaz/Desktop/STAT 426/HW2_Problem1.png)
+
+**(b)** Recall from Assignment 1 that the maximum likelihood estimator is $\hat{\mu}=\bar{Y}=Y/n$. Obtain the mathematical form of the log-likelihood ratio test statistic $-2\{L(\mu_0) - L(\hat{\mu})\}$, which we would use to test the null hypothesis, $H_0:\mu=\mu_0$. Simplify the expression to show that it is a function of $Y$, $n$, and $\mu_0$ only.
+
+Answer:
+
+**(c)** Suppose in a sample of $n=10$ we observe $Y=45$. Find the p-value for the log-likelihood ratio test of $H_0:\mu=3$ versus $H_A:\mu\ne 3$ using the chi-square approximation for the null distribution of the test statistic.
+
+Answer:
+```{r}
+pchisq(-14.15, df = 1, log = FALSE)
+
+#We would reject not reject the null. 
+```
+
+### Problem 2 (6 pts)
+
+**(a)** Suppose we observe 1 observation from a Poisson model with mean $\mu$, obtaining $y=3$. Using the \texttt{dpois} function in \texttt{R}, plot the likelihood function over the range from $\mu=0$ to $\mu=10$. Hint: see an analogous Binomial example in the the class notes "1.4 Likelihood Based Inferences - Part II", and also check the R help documentation for \texttt{dpois}.
+
+Answer:
+```{r}
+y = 3
+curve(dpois(y, x, log = FALSE), xlim=c(0,10), xlab="M",
+main=paste("Likelihood for y =" , y), lwd=3)
+
+```
+
+**(b)** Redo the plot in (a) if we observe $y=6$ instead.
+
+Answer:
+```{r}
+y = 6
+curve(dpois(y, x, log = FALSE), xlim=c(0,10), xlab="M",
+main=paste("Likelihood for y =" , y), lwd=3)
+```
+
+**(c)** Redo the plot in (a) if we observe $y=0$.
+
+Answer:
+```{r}
+y = 0
+curve(dpois(y, x, log = FALSE), xlim=c(0,10), xlab="M",
+main=paste("Likelihood for y =" , y), lwd=3)
+```
+
+### Problem 3 (4 pts)
+
+The table below summarizes data from a double blind study involving 270 French skiers to compare incidence of Common Colds for skiers given placebo or Vitamin C supplements.
+
+\begin{center}
+    \begin{tabular}{lccc}
+     & ~~~ & \multicolumn{1}{c}{Cold} & 
+       \multicolumn{1}{c}{No Cold} \\[0.5ex] \hline \\[-2ex]
+    Placebo & & 31 & 109 \\
+    Vitamin C & & 17 & 122 \\[0.5ex] \hline
+    \end{tabular}
+    \end{center}
+    
+**(a)** Compute the estimated difference in proportions, relative risk and odds ratio based on these data.
+
+Answer: Work done on separate sheet. 
+![](/Users/briannadiaz/Desktop/STAT 426/HW2 _Problem3.png)
+**(b)** Interpret the results in (a): according to each measure, which treatment appears better for preventing the Common Cold, and how large is the estimated effect (difference, ratio etc)?
+
+**Answer:** Vitamin C is appears to be better at preventing the Common Cold because it has a probability of 0.122 compared to placebo with probability if 0.221. Based off of the relative risks, there is a 1.81 more of a chance that the population has a cold with the placebo. 
+
+### Problem 4 (4 pts)
+
+A 20-year cohort study of British male physicians found that the proportion per year who died from lung cancer was 0.00140 for cigarette smokers and 0.00010 for nonsmokers. The proportion who died from coronary heart disease was 0.00669 for smokers and 0.00413 for nonsmokers.
+
+**(a)** Describe the association of smoking with coronary heart disease using the relative risk and odds ratio. Interpret the results in terms of how the coronary heart disease risks compare for the two groups.
+
+![](/Users/briannadiaz/Desktop/STAT 426/HW2 _Problem4.png)
+
+Answer: Work done on separate sheet. Based off of the results, smokers are about 1.62 times more likely to die form Coronary heart disease. 
+
+**(b)** Describe the association of smoking with lung cancer using the relative risk and odds ratio. Interpret the results in terms of how the lung cancer risks compare for the two groups.
+
+Answer: Work done on separate sheet. Based off of the results, a smoker is about 14.0 time more likely to die lung cancer than a non-smoker.
+
+
+
