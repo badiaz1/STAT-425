@@ -1,0 +1,168 @@
+---
+title: "STAT 426 Assignment 7"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+fontsize: 12pt
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+**Due Tuesday, October 19, 11:59 pm.** 
+
+Submit through Moodle.
+
+## Name: Brianna Diaz
+### Netid: bdiaz22
+
+Submit your work both as an R markdown (*.Rmd) document and as a pdf, along with any files needed to run the code. Embed your answers to each problem in the document below after the question statement. If you have hand-written work, please scan or take pictures of it and include in a pdf file, ideally combined with your pdf output file from R Markdown. Be sure to show your work.
+
+### Problem 1. (8 pts) 
+
+The comma-separated data file 'surgery.csv' is included with this assignment. The data concern patients having surgery under general anesthesia. The variables are
+
+Y = whether a patient experienced a sore throat on waking (0 = no, 1 = yes)
+
+D = duration of surgery (in minutes)
+
+T = type of device used to secure the airway (0 = laryngeal mask airway, 1 = tracheal tube)
+
+**a)** (2 pts) Read the data into a data frame and display the first few rows of the data set. (Hint: check R help for 'read.csv')
+```{r}
+surgery = read.csv("surgery.csv", header = TRUE)
+head(surgery)
+```
+
+**b)** (2 pts) Fit a logit model that includes \texttt{D}, \texttt{T}, and their interaction. Based on the model summary, is the interaction term significant at level $\alpha=0.05$?
+```{r}
+logit = glm(Y ~ D * T, family = binomial, data = surgery)
+
+summary(logit)
+#p-value: 0.1966, interaction not significant. 
+```
+
+**c)** (2 pts) Fit the additive model and display the model summary. Provide likelihood ratio confidence intervals for the coefficients and interpret the effects of the two variables.
+```{r}
+add_mod = glm(Y ~ D + T, family = binomial, data = surgery)
+
+summary(add_mod)
+
+confint(add_mod)
+#The effect the two variables have according to the confidence interval D is significant and T is not 
+#This is because D is to the right of ) and T wraps around. 
+```
+
+**d)** (2 pts) For the additive model, make a scatter plot of the observed responses versus duration of surgery. Indicate which device was used for each point using the plotting character. (One method is to use pch=T in the plot command). The add two curves to the plot, using different types of dashes or colors: the fitted probability response curve when T=0, and the fitted response curve when T=1. Also include a legend to indicate which curve is which.
+```{r}
+plot(Y~D, data = surgery, main = "Observed Vs. Durantion", xlab = "Duraton of surgery", ylab= "Observed responses")
+curve(predict(add_mod, data.frame(T = 0, D=x), type="response"),col="Green",
+add=TRUE)
+curve(predict(add_mod, data.frame(T = 1, D=x), type="response"),col="Red",
+add=TRUE)
+legend("bottomright",
+       c("T = 0", "T=1"),
+       col = c("Green", "Red"), lwd = 1:2)
+```
+
+### Problem 2. (12 pts)
+
+**Install faraway package:** For this exercise, first make sure you have the \texttt{faraway} package installed. Check your R Studio list of packages. If the list includes \texttt{faraway}, you have it. If not, click the 'install' button in the packages window, and start typing \texttt{faraway} into the packages dialog box. It should auto-complete. Select 'faraway' and hit the **install** button.
+
+**Data:** Aflatoxin B1, a type of mold that grows on peanuts and grains, was fed to lab animals at varying doses and the number responding with liver cancer were recorded. \texttt{dose} is the dosage in parts per billion, and, for each dose, \texttt{total} is the number of test animals and \texttt{tumor} is the number with lever cancer. The data are displayed below.
+
+```{r}
+library(faraway)
+aflatoxin
+```
+
+**a)** (2 pts) Consider three link function models for these data:
+\begin{align*}
+\text{Logit:} &\quad \log\left(\frac{\pi}{1-\pi}\right) = \alpha + \beta\, dose\\
+\text{Probit:} &\quad \Phi^{-1}(\pi) = \alpha + \beta\, dose\\
+\text{Complementary log-log:} &\quad \log(-\log(1-\pi) = \alpha + \beta\, dose
+\end{align*}
+
+Make a scatter plot of the observed proportions with liver cancer versus dose. Add the fitted response curves for the three models to the graph.
+```{r}
+mod.logit = glm(cbind(tumor,total-tumor) ~ dose,
+family=binomial, data=aflatoxin)
+
+mod.probit = glm(cbind(tumor,total-tumor) ~ dose,
+family=binomial(link = probit), data=aflatoxin)
+
+mod.cloglog = glm(cbind(tumor,total-tumor) ~ dose,
+family=binomial(link = cloglog), data=aflatoxin)
+
+plot(tumor/total~ dose, data=aflatoxin, pch=10, cex=2, cex.axis=1.2, las=1)
+
+curve(predict(mod.logit, data.frame(dose=x), type="response"), add=TRUE, lty=1, col="Blue")
+
+curve(predict(mod.probit, data.frame(dose=x), type="response"), add=TRUE, lty=2, col="Orange", lwd=2)
+
+curve(predict(mod.cloglog, data.frame(dose=x),
+type="response"), add=TRUE, lty=3, col="Purple", lwd=3)
+
+
+```
+
+**b)** (2 pts) Compare the deviances for the three models. Based on the curves and the deviances, which model appears to fit the best?
+```{r}
+1-pchisq(deviance(mod.logit),df.residual(mod.logit))
+1-pchisq(deviance(mod.probit),df.residual(mod.probit))
+1-pchisq(deviance(mod.cloglog),df.residual(mod.cloglog))
+#The model that appears the best is probit link
+```
+
+**c)** (2 pts) Make another scatter plot with three link function curves like the one in a), but this time use $\log(1+dose)$ as the predictor variable, instead of $dose$.
+```{r}
+mod.logit_log = glm(cbind(tumor,total-tumor) ~ log(1+dose),
+family=binomial, data=aflatoxin)
+
+mod.probi_logt = glm(cbind(tumor,total-tumor) ~ log(1+dose),
+family=binomial(link = probit), data=aflatoxin)
+
+mod.cloglog_log = glm(cbind(tumor,total-tumor) ~ log(1+dose),
+family=binomial(link = cloglog), data=aflatoxin)
+
+plot(tumor/total~ log(1+dose), data=aflatoxin, pch=10, cex=2, cex.axis=1.2, las=1)
+
+curve(predict(mod.logit_log, data.frame(dose = x), type="response"), add=TRUE, lty=1, col="Blue")
+
+curve(predict(mod.probi_logt, data.frame(dose = x), type="response"), add=TRUE, lty=2, col="Orange", lwd=2)
+
+curve(predict(mod.cloglog_log, data.frame(dose = x),
+type="response"), add=TRUE, lty=3, col="Purple", lwd=3)
+
+```
+
+**d)** (2 pts) Compare the deviances for the three $log(1+dose)$ models. Based on the curves and deviances, which model appears to fit the best.
+```{r}
+1 - pchisq(deviance(mod.logit_log), df.residual(mod.logit_log))
+1 - pchisq(deviance(mod.probi_logt), df.residual(mod.probi_logt))
+1 - pchisq(deviance(mod.cloglog_log), df.residual(mod.cloglog_log))
+#The best model is log-log link
+```
+
+**e)** (2 pts) Among the 6 different models that you fit, choose which one fits the best and use it to predict the proportion developing liver cancer at a dose of 20.
+```{r}
+#summary(mod.probit)
+#sumary(mod.probit)$coefficients
+
+mod_probit_pre = predict(mod.probit,newdata=data.frame(dose=20), interval="confidence", se.fit=TRUE, type="link")
+
+mod_probit_pre
+```
+
+**f)** (2 pts) Provide a 95\% confidence interval for your prediction in **e)**.
+```{r}
+beta = coefficients(mod.probit)
+beta[1] + beta[2]*20
+
+low = -0.6975651 - 1.96*0.1673653
+
+high = -0.6975651 + 1.96*0.167365
+
+c(low, high)
+```
