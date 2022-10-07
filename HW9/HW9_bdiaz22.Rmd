@@ -1,0 +1,148 @@
+---
+title: "STAT 426 Assignment 9"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+fontsize: 12pt
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+**Due Tuesday, November 2, 11:59 pm.** 
+
+Submit through Moodle.
+
+## Name: Brianna Diaz 
+### Netid: bdiaz22
+
+Submit your work both as an R markdown (*.Rmd) document and as a pdf, along with any files needed to run the code. Embed your answers to each problem in the document below after the question statement. If you have hand-written work, please scan or take pictures of it and include in a pdf file, ideally combined with your pdf output file from R Markdown. Be sure to show your work.
+
+### Problem 1. (10 pts) Variable selection and diagnositc classification
+
+**Install faraway package:** For this exercise, first make sure you have the \texttt{faraway} package installed. Check your R Studio list of packages. If the list includes \texttt{faraway}, you have it. If not, click the 'install' button in the packages window, and start typing \texttt{faraway} into the packages dialog box. It should auto-complete. Select 'faraway' and hit the **install** button. You will need to issue the command \texttt{library(faraway)} to load the data from the package into your environment.
+```{r}
+library(faraway)
+```
+
+
+The data set \texttt{wbca} in the \texttt{faraway} package is from a study of breast cancer in Wisconsin. There are 681 cases of potentially cancerous tumors of which 238 are malignant, and the rest are benign. The response variable, \texttt{Class}, equals 0 if malignant and 1 if benign. There are 9 possible predictor variables also included in the data. The predictor values were determined by a doctor observing the cells and rating them on a scale from 1 (normal) to 10 (most abnormal) with respect to the particular characteristic. You will want to predict malignant cases, so you might find it helpful to define a new response, \texttt{malignant = 1*(Class==0)}. Please see the help file for the data set in the faraway library for more information about the variables.
+
+**a)** (2 pts) Use logistic regression to fit the model where all predictors are included as additive variables (no interactions). Show the model summary. Which variables are significant at level $\alpha=0.05$?
+```{r}
+add <- glm(1*(Class==0) ~ ., family=binomial, data = wbca)
+summary(add)
+
+#Adhes,BNucl,Chrom, NNucl, Thick are all significant at the 0.05 level.
+```
+
+**b)** (2 pts) Use step-wise regression search to find the best subset of variables you can find to minimize AIC. Display the model summary for the selected model. Which variables are significant at level $\alpha=0.05$?
+```{r}
+mod1b <- glm(1*(Class==0) ~ 1, family = binomial, data = wbca)
+
+stepmod <- step(mod1b, ~ Adhes + BNucl + Chrom + Epith + Mitos + NNucl + Thick + UShap + USize, direction = "both")
+
+summary(stepmod)
+
+#Best subset is 1 * (Class == 0) ~ BNucl + Thick + Chrom + Adhes + NNucl + Mitos + UShap
+
+#significant variables: Adhes, BNucl, Chrom, NNucl, Thick
+```
+
+**c)** (2 pts) Based on your selected model, find the predicted probability that a tumor is malignant if each predictor is rated as 5, and also provide a 95\% confidence interval for the probability.
+```{r}
+pred <- predict(stepmod, newdata = data.frame(BNucl=5, Thick=5, Chrom=5, Adhes=5, NNucl=5, Mitos=5, UShap=5), type = "response", se.fit=TRUE)
+
+pred
+
+low <- 0.9930239 - 1*0.01064508*1.96
+high <- 0.9930239 + 1*0.01064508*1.96
+
+c(low,high)
+```
+
+**d)** (2 pts) Suppose, based on your selected model, that we decide to classify a tumor as malignant if the predicted probability of malignancy is 0.4 or greater. Calculate the apparent sensitivity and specificity based on the data.
+```{r}
+pi0 <- 0.4
+table(y=wbca$Class, yhat=as.numeric(fitted(stepmod) > pi0))
+
+#sensitivity
+10/(433+10)
+
+#specificity
+8/(8+230)
+```
+
+**e)** (2 pts) Under the same setup as in part d), calculate the leave-one-out cross validation estimates of sensitivity and specificity.
+```{r}
+pihatcv <- numeric(nrow(wbca))
+
+for(i in 1:nrow(wbca))
+pihatcv[i] <- predict(update(stepmod, subset=-i),
+newdata=wbca[i,],type="response")
+
+table(y=wbca$Class, yhat=as.numeric(pihatcv > pi0))
+
+#sensitivity
+10/(10+433)
+#specificity
+227/(11+227)
+```
+
+
+### Problem 2. (8 pts) Revisiting the Death Penalty Study
+
+This problem involves further analysis of the death penalty data. The data are available as "deathpenalty.txt" from the class Moodle site in the folder, "Data sets for lecture notes and assignments." Recall that the data had frequencies of death penalty decisions (yes or no) along with the race of the defendant and victim.
+
+**a)** (2 pts) After reshaping the data appropriately, use logistic regression to fit the homogeneous association model where the response (Deathpenalty = yes or no) depends only on the race of the defendant and the race of the victim, but not their interaction. Display the model summary.
+```{r}
+deathpenalty <- read.table("deathpenalty.txt", header = TRUE)
+
+death <- reshape(deathpenalty,varying=list(c("No","Yes")), v.names = "Freq", timevar = "DeathPenalty", idvar = c("Defendant", "Victim"), direction = "wide")
+
+death
+
+mod2a <- glm(cbind(No,Yes) ~ Defendant + Victim, family=binomial,
+data=death)
+
+summary(mod2a)
+```
+
+**b)** (2 pts) Test goodness of fit of the model in a). What do you conclude?
+```{r}
+deviance(mod2a)
+df.residual(mod2a)
+1 - pchisq(deviance(mod2a),df.residual(mod2a))
+
+#Based off the P-Value is large so we can conclude to reject the null. 
+```
+
+**c)** (2 pts) Based on the model in a), provide a likelihood confidence interval for the conditional odds ratio association between the response and defendant's race. What do you conclude?
+```{r}
+exp(confint(mod2a)["Defendantwhite",])
+#The model shows there is an association between response and race
+```
+
+**d)** (2 pts) Perform a Mantel-Haenszel test for the common conditional odds ratio association between the death penalty decision and defendant's race, stratified on victim's race. How does the result compare with the result you got in c) (similar conclusion, or very different)? Hint: You will need to create the appropriate cross-classified table first.
+```{r}
+death.array <- xtabs(Freq ~ Defendant + Victim + DeathPenalty, data = deathpenalty)
+death.array[,,1:2]
+mantelhaen.test(death.array, correct=FALSE)
+#The results are are the same as part c 
+#there is an interaction between race in defendant and victim 
+```
+
+### Problem 3. (2 pts) Complete separation
+
+Consider a simple set up where we have $n_1$ observations with $y=0$ and $x=0$ and $n_2$ observations with $y=1$ and $x=1$. We wish to fit a logistic regression model with $y$ as the response and $x$ as the predictor, so
+$$
+P(Y=1 | X=x) = \frac{e^{\alpha+\beta x}}{1+e^{\alpha+\beta x}}, \quad x=0, 1.
+$$
+
+Write down the log-likelihood $L(\alpha, \beta)$, simplifying as much as possible. Then show that for any fixed, finite value of $\alpha$, 
+$$
+\frac{\partial L(\alpha,\beta)}{\partial \beta} >0.
+$$
+Therefore, for any finite value of $\alpha$, the likelihood is maximized by letting $\beta \to\infty$. 
+
