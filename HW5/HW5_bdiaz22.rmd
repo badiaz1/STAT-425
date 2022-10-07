@@ -1,0 +1,164 @@
+---
+title: "STAT 426 Assignment 5"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+fontsize: 12pt
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+**Due Tuesday, September 28, 11:59 pm.** 
+
+Submit through Moodle.
+
+## Name: Brianna Diaz
+### Netid: bdiaz22
+
+Submit your work both as an R markdown (*.Rmd) document and as a pdf, along with any files needed to run the code. Embed your answers to each problem in the document below after the question statement. If you have hand-written work, please scan or take pictures of it and include in a pdf file, ideally combined with your pdf output file from R Markdown. Be sure to show your work.
+
+
+
+### Problem 1 (8 pts)
+
+This problem uses the 'bliss' data set from the 'faraway' package in R. It is reproduced here with a different name for convenience. The data are from an early experiment to investigate the effectiveness of different concentrations of a pesticide in killing insects. The response is the number of dead and live insects at each concentration.
+ 
+```{r}
+df = data.frame(
+  dead=c(2,8,15,23,27), 
+  alive=c(28, 22, 15, 7, 3), 
+  conc=c(0,1,2,3,4)
+  )
+df
+```
+    
+**(a)** Use the \texttt{glm} function to fit a binomial logistic regression model to these data, with the numbers dead and alive as the response, and treating 'conc' as a numerical explanatory variable. Display the model summary.
+
+Answer:
+```{r}
+conc_fit <- glm(cbind(dead, alive) ~ conc,
+family=binomial,data=df)
+summary(conc_fit)
+```
+
+**(b)** Based on the results you obtained above, find the predicted log-odds, odds, and probability of insect death for \texttt{conc=3.5}.
+
+Answer:
+```{r}
+predic = -2.3238 + 1.1619*(3.5)
+predic
+
+odds = exp(predic)
+odds
+
+predict.glm(conc_fit, newdata = data.frame(conc = 3.5), type = "response")
+```
+
+**(c)** The residual deviance reported in the model summary can be used as a goodness-of-fit test of the model when the data are grouped and the group probabilities are not too extreme. Assuming that applies here, compute the p-value for the goodness-of-fit test. Explain whether or not the model adequately fits the data according to the goodness-of-fit test.
+
+Answer:
+```{r}
+deviance(conc_fit)
+df.residual(conc_fit)
+1-pchisq(deviance(conc_fit), df.residual(conc_fit)) #p-value
+#Based off of the test the model adequately fits
+```
+
+**(d)** Make a scatter plot of the proportion of deaths (vertical axis) versus the concentration (horizontal axis). Add the logistic regression curve to the plot. Explain briefly whether the curve appears to fit the data well or not (visual impression). Hint: For a similar plot, see the snoring and heart disease example in "Notes: 4.2 GLMs for Binary and Binomial Response Data". 
+
+Answer:
+```{r}
+with(df, plot(df$conc, df$dead/(df$dead+df$alive), xlab= "Concentration", ylab= "Proportions of deaths"))
+curve(predict(conc_fit, data.frame(conc=x), type = "response"), add=TRUE)
+```
+
+### Problem 2 (6 pts)
+
+The following data are from a retrospective study of the relationship between coffee drinking and myocardial infarction (MI) for women aged 30-39. The data show the numbers of nonsmokers with either high coffee consumption (\texttt{HiCoffee}) or low coffee consumption (\texttt{LoCoffee}) for patients who had suffered MI (\texttt{MI=1}) and for control patients (\texttt{MI=0}).
+
+```{r}
+dfmi = data.frame(
+  HiCoffee = c(14, 49),
+  LoCoffee = c(75, 381),
+  MI = c(1,0)
+)
+dfmi
+```
+
+**(a)** Notice that the first two columns of the data frame form a $2\times 2$ table of counts for Coffee consumption versus MI. Let $\theta$ denote the ratio of odds for High versus Low coffee consumption for MI patients versus controls. Using contingency table methods, calculate a sample estimate of the log-odds, $\ln(\theta)$, along with the lower and upper bounds of its 95\% confidence interval for $\ln(\theta)$.
+
+Answer: 
+```{r}
+theta<- (14 * 381) / (49 * 75)
+(log_odds = log(theta))
+
+low = log(theta) - 1.96*(sqrt(1/14+1/49+1/75+1/381))
+upper = log(theta) + 1.96*(sqrt(1/14+1/49+1/75+1/381))
+
+(cl = c(low,upper))
+```
+
+**(b)** Use the \texttt{glm} function to fit a logistic regression model with the high and low coffee consumption counts as the response, and MI as a "numerical" explanatory variable (it only has two unique values). Display the model summary. Compare the estimated coefficient for MI with the log-odds estimate you calculated in (a).  
+Answer:
+```{r}
+coff_fit <- glm(cbind(HiCoffee, LoCoffee) ~ MI, family=binomial,data=dfmi)
+summary(coff_fit)
+
+#The log-odds and estimated coefficient are the same.
+```
+
+**(c)** Calculate the 95\% profile likelihood confidence interval for the MI coefficient in the model, and compare with the corresponding 95\% Wald type confidence interval.
+
+Answer:
+```{r}
+confint(coff_fit)
+
+#Wald CI
+low = 0.3725 - 0.3283*(1.96)
+high = 0.3725 + 0.3283*(1.96)
+(wald = c(low , high))
+
+#They are about the same except for the lower interval. 
+#It is not within the intervals calculated through Wald. 
+```
+
+### Problem 3 (6 pts)
+
+The following data are from a retrospective study of the relationship between high and low levels of coffee consumption and myocardial infarction (MI) versus control for women aged 30-39 who were nonsmokers. The two variables are coded so that {MI = 1} = {myocardial infarction}, {MI = 0} = {control}, {HiCoffee = 1} = {Coffee consumption $\ge$ 5 cups per day}, and {HiCoffee = 0} = {Coffee consumption < 5 cups per day}.
+
+Answer: 
+
+```{r}
+dfmi2 = data.frame(
+  MI=c(1,1,0,0),
+  HiCoffee=c(1,0,1,0),
+  Count=c(14,75,49,381)
+)
+dfmi2
+```
+
+
+**(a)** Fit a Poisson log-linear model to the counts, with explanatory variables \texttt{MI}, \texttt{HiCoffee}, and their product, which is expressed in the model formula as \texttt{MI:Coffee}. Display the model summary.
+
+Answer:
+```{r}
+coff <- glm(Count ~ HiCoffee * MI, family = poisson, data=dfmi2)
+summary(coff)
+```
+
+**(b)** For this type of model, the association between the two variables is measured by the coefficient of the interaction term \texttt{MI:HiCoffee}. Is there a significant association at level $\alpha=0.05$?
+
+Answer:
+**There is not significant association at the leave 0.05 P-value is 0.256**
+
+**(c)** Compare the estimated coefficient of \texttt{MI:HiCoffee} in this problem to the Problem 2a estimate of log-odds ratio and Problem 2b estimated coefficient of MI. According to the mathematical theory, they should all be the same. Does that appear to be correct within numerical rounding error? Confirm, or explain any differences you find.
+
+Answer:
+**They are all the same 0.3725**
+
+
+
+
+
