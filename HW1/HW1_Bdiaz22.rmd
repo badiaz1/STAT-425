@@ -1,0 +1,100 @@
+---
+title: "STAT 426 Assignment 1"
+output: pdf_document
+fontsize: 12pt
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+**Due Tuesday, August 31, 11:59 pm.** 
+
+Submit through Moodle.
+
+## Name: Brianna Diaz
+### Netid: bdiaz22
+
+Submit your computational work both as an R markdown (*.Rmd) document and as a pdf, along with any files needed to run the code. Embed your answers to each problem in the document below after the question statement. If you have hand-written work, please scan or take pictures of it and include in a pdf file, ideally combined with your pdf output file from R Markdown. Be sure to show your work.
+
+
+### Problem 1 (10 pts)
+
+An exam has 80 multiple choice questions. Each question has 4 choices for the answer, exactly one of which is correct. Suppose for each question a student guesses one of the answers at random.
+
+**(a)** Specify the distribution of the student's number of correct answers.
+
+**Answer:** This would be a Binomial Distribution. 
+
+**(b)** Find the mean and standard deviation of the distribution in (a). 
+
+**Answer:** 
+```{r}
+80 * (0.25) -> mean
+
+print(mean)
+
+80 * (0.25) * (0.75) -> a 
+sqrt(a) -> SD
+
+print(SD)
+```
+
+**(c)** Would it be surprising if the student got at least 40 correct answers? Why?
+
+**Answer:** Yes it would be surprising because the are only expected to get 0.25 right, which is 20 questions correct. 40 correct answers is twice as much than expected.
+
+**(d)** Specify the distribution of $(n_1, n_2, n_3, n_4)$, where $n_j$ is the number of times the student selected choice $j$, for $j=1,2,3,4$.
+
+**Answer:** This would be a multinomial distribution (80, 1/4,1/4,1/4,1/4) 
+
+**(e)** Find $E(n_j)$, $\text{var}(n_j)$, $\text{cov}(n_j, n_k)$ and $\text{corr}(n_j, n_k)$ for $j\ne k$.
+
+**Answer:** 
+```{r}
+80 -> n
+0.25 -> x
+0.25 -> y
+
+n*x -> E
+print(E)
+
+n*x*(1-x) -> var
+print(var)
+
+-(n*x*y) -> cov
+print(cov)
+
+n*y*(1-y) -> var2
+
+cov/(sqrt(var*var2)) -> corr
+print(corr)
+
+```
+
+
+### Problem 2 (10 pts)
+ 
+Let $Y_1, Y_2, \ldots, Y_n$ be independent observations from the Poisson distribution with mean $\mu$, which is unknown. Recall that if
+$Y = \sum_{i=1}^n Y_i$, then $Y \sim \text{Poisson}(n\mu)$.
+
+**(a)** Under the model assumptions in (a), find mathematical expressions for the likelihood, $\ell(\mu)$ and log-likelihood, $L(\mu)$, simplifying the expressions as much as possible.
+**Answer:**
+
+**(b)** Show that the maximum likelihood estimator is $\hat{\mu}=\bar{Y}=Y/n$.
+
+Answer:
+
+**(c)** Find an expression for the exact variance of $\hat{\mu}$.
+
+Answer:
+
+**(d)** Using Fisher Information, find the large sample (asymptotic) variance of $\hat{\mu}$. Is it the same as the variance in (c)?
+
+Answer:
+
+**(e)** Suppose you obtain a sample (3, 6, 3, 3, 5, 4, 6, 9, 3, 3) from the Poisson distribution with mean $\mu$. Find the p-value for a two-sided Wald test of the null hypothesis $H_0: \mu=3$.
+
+Answer:
+
+
+
