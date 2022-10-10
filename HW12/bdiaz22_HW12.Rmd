@@ -1,0 +1,131 @@
+---
+title: "STAT 426 Assignment 12"
+output:
+  pdf_document: default
+  word_document: default
+  html_document:
+    df_print: paged
+fontsize: 12pt
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+**Due Tuesday, December 7, 11:59 pm.** 
+
+Submit through Moodle.
+
+## Name: Brianna Diaz 
+### Netid: bdiaz22
+
+Submit your work both as an R markdown (*.Rmd) document and as a pdf, along with any files needed to run the code. Embed your answers to each problem in the document below after the question statement. If you have hand-written work, please scan or take pictures of it and include in a pdf file, ideally combined with your pdf output file from R Markdown. Be sure to show your work.
+
+### Problem 1. (10 pts) 
+
+The data file "endometrial.txt" is from a study of endometrial cancer. The variables are: NV = neovasculation (1 = present, 0 = absent); PI = pulsatility index of arteria uteria, EH = endometrium height, and HG = histology evaluation (0 = low grade, 1 = high grade). 
+```{r}
+library(tidyverse)
+library(readr)
+library(glmnet)
+
+cancer <- read.table("endometrial.txt", header =  TRUE)
+```
+
+**a)** (2 pts) Fit and summarize an additive logistic regression model with HG as the response variable and the other variables as predictors, using ordinary maximum likelihood.
+```{r}
+prob1_a <- glm(HG ~ ., family = "binomial", data = cancer )
+
+summary(prob1_a)
+```
+
+**b)** (2 pts) Try using the drop1 function to simplify the model. Is there a better model than the three variable model, according to AIC and/or the likelihood ratio tests? 
+```{r}
+drop1(prob1_a)
+drop1(prob1_a, test = "LRT")
+#No there is not a better model
+```
+
+**c)** (2 pts) Make a scatter plot of the response versus NV. What is this situation called? Does it indicate a problem for the estimated coefficient of NV and its standard error? If so, what is the problem?
+```{r}
+plot(cancer$NV, cancer$HG )
+
+#There is really no patter in the graph. Therefore the coefficients and the standard error will be poorly calculated.  
+```
+
+**d)** (2 pts) Use the lasso penalty to fit the logistic model for HG using all three predictors. Display the coefficient plot. 
+```{r}
+X = as.matrix(cancer[,-4])
+y = cancer[,4]
+modlasso <- glmnet(X,y)
+
+#plot(modlasso, lable = TRUE, lwd = 1)
+```
+
+**e)** (2 pts) Show the coefficient estimates for $\lambda=0.25$. How are these different from the coefficients in the maximum likelihood fit? What causes the magnitude of the NV coefficient to be so much smaller using the lasso than it was using unconstrained maximum likelihood?
+```{r}
+coef(modlasso, s = 0.25)
+
+#These coefficients are much smaller than max likelihood fit.
+
+#This is because there are only a few predictors effecting the response 
+```
+
+### Problem 2 (6 pts)
+
+This problem also refers to the endometrial cancer data from Problem 1.
+
+**a)** (2 pts) Use **5-fold** cross validation with classification error as the performance measure (see the cv.glmnet documentation for how to select the number of "folds" -- the default is 10-fold). Show the plot of misclassification error versus $\lambda$ or $\log(\lambda)$. Note: in order to make your results reproducible, set the seed before running the cross-validation function.
+```{r}
+set.seed(1121)
+prob2_a <- cv.glmnet(X,y, family = "binomial", type.measure = "class", nfolds = 5)
+plot(prob2_a)
+```
+
+**b)** (2 pts) Show the value of $\lambda$ that minimized the misclassification error using 5-fold cross-validation. Also show the coefficients of the corresponding model. Which, if any, variables were eliminated? 
+```{r}
+prob2_a$lambda.min
+coef(prob2_a, s = prob2_a$lambda.min)
+
+# The PI variable was eliminated.
+```
+
+**c)** (2 pts) Now use 5-fold cross validation with "auc" as the performance measure (see documentation for how to do this). Show the plot of AUC versus $\lambda$ or $\log(\lambda)$. Which value of $\lambda$ maximizes auc?
+```{r}
+set.seed(1121)
+prob2_c <- cv.glmnet(X,y, family = "binomial", type.measure = "auc", nfolds = 5)
+plot(prob2_c)
+
+prob2_a$lambda.min
+# auc is maximized at 0.07272276
+```
+
+### Problem 3 (4 pts)
+
+The data file "horseshoe.txt" is from a study of horseshoe crab mating patterns. The relevant variables are the \texttt{color} index, \texttt{spine} length, \texttt{width}, and \texttt{weight} of the female, and the response \texttt{satell}, the number of males attached.
+
+```{r}
+crab <- read.table('horseshoe.txt', header = TRUE)
+```
+
+
+**a)** (2 pts) Use the elastic net method with $\alpha=0.7$ to fit a Poisson log-linear model with numerical variables color, spine, width and weight. Show the coefficient plot versus L1 norm, and the estimated coefficients for $\lambda=0.1$.
+```{r}
+XX <- model.matrix(~color*spine*width, data = crab)
+yy <- crab$satell
+wt = crab$weight
+mfit <- glmnet(XX, yy, weights = wt, family = "poisson", alpha = 0.7)
+
+plot(mfit)
+
+coef(mfit, s = 0.1)
+```
+
+**b)** (2 pts) Use 10-fold cross validation with performance measure "deviance" to select the best value for $\lambda$. Display the performance graph (deviance versus $\lambda$ or $\log(\lambda)$, as well as the value of $\lambda$ that minimizes cross-validation deviance, and the corresponding coefficient estimates for the model. Which, if any, predictors were eliminated?
+```{r}
+prob3_b <- cv.glmnet(XX, yy, weights = wt, family = "poisson", type.measure = "deviance")
+plot(prob3_b)
+prob3_b$lambda.min
+coef(prob3_b, s=prob3_b$lambda.min)
+
+# All the interactions, and spine were eliminated.
+```
